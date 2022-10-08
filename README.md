@@ -29,3 +29,5 @@ AWS_EVENTS_ACCESS_TOKEN=<The value that you copied from the browser>
 ```
 ./favorites_exporter.py
 ```
+
+-   A `favorites.xlsx` file will be created containing all of your favorite sessions

@@ -57,33 +57,38 @@ def _get_favorites_page(next_token: str) -> tuple[list[Session], str]:
     query_data = query_template.format(event_id=EVENT_ID, next_token=next_token)
     response = requests.post(url=query_endpoint, data=query_data, headers={"authorization": authz, "Content-Type": "application/json"}, timeout=30)
     if response.ok:
-        body = json.loads(response.text)
-        favorites = body["data"]["event"]["myFavorites"]
-        favorite_items = favorites["items"]
-        next_token = favorites["nextToken"]
-        for item in favorite_items:
-            session = Session(
-                alias=item["alias"],
-                name=item["name"],
-                description=item["description"],
-                type=item["sessionType"]["name"],
-            )
-            if "startTime" in item and item["startTime"]:
-                time = datetime.fromtimestamp(item["startTime"] / 1000, tz=timezone.utc).astimezone(pytz.timezone("US/Pacific"))
-                session.date = time.strftime("%d/%m/%Y")
-                session.start_time = time.strftime("%H:%M")
-            if "endTime" in item and item["endTime"]:
-                time = datetime.fromtimestamp(item["endTime"] / 1000, tz=timezone.utc).astimezone(pytz.timezone("US/Pacific"))
-                session.end_time = time.strftime("%H:%M")
-            if "venue" in item and item["venue"]:
-                session.location = item["venue"]["name"]
-            if "room" in item and item["room"]:
-                session.room = item["room"]["name"]
-            favorite_sessions.append(session)
+        next_token = _parse_sessions(favorite_sessions, response)
     else:
         raise Exception(f"Failed to get favorites, error: {response.reason}")
 
     return favorite_sessions, next_token
+
+
+def _parse_sessions(favorite_sessions, response):
+    body = json.loads(response.text)
+    favorites = body["data"]["event"]["myFavorites"]
+    favorite_items = favorites["items"]
+    next_token = favorites["nextToken"]
+    for item in favorite_items:
+        session = Session(
+            alias=item["alias"],
+            name=item["name"],
+            description=item["description"],
+            type=item["sessionType"]["name"],
+        )
+        if "startTime" in item and item["startTime"]:
+            time = datetime.fromtimestamp(item["startTime"] / 1000, tz=timezone.utc).astimezone(pytz.timezone("US/Pacific"))
+            session.date = time.strftime("%d/%m/%Y")
+            session.start_time = time.strftime("%H:%M")
+        if "endTime" in item and item["endTime"]:
+            time = datetime.fromtimestamp(item["endTime"] / 1000, tz=timezone.utc).astimezone(pytz.timezone("US/Pacific"))
+            session.end_time = time.strftime("%H:%M")
+        if "venue" in item and item["venue"]:
+            session.location = item["venue"]["name"]
+        if "room" in item and item["room"]:
+            session.room = item["room"]["name"]
+        favorite_sessions.append(session)
+    return next_token
 
 
 def main() -> None:
