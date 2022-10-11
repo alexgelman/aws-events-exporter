@@ -15,13 +15,17 @@ Specifically hard coded for AWS re:Invent 2022, but this can be changed.
 
     -   Open you browser's dev tools
     -   Go to the storage tab
-    -   Expand local session storage and choose `https://portal.awsevents.com`
+    -   Expand local storage and choose `https://portal.awsevents.com`
     -   Copy the value for `CognitoIdentityServiceProvider.<long string>.accessToken`
 
 -   Create a new `.env` file in the repo dir, and add the following line:
 
 ```
 AWS_EVENTS_ACCESS_TOKEN=<The value that you copied from the browser>
+```
+- Run within poetry virtualenv
+```
+poetry shell
 ```
 
 -   Run the utility by executing the following command in a terminal window in the repo dir:
