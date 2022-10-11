@@ -23,6 +23,7 @@ class Session:
     name: str
     description: str
     type: str
+    level: str
     date: Optional[str] = ""
     start_time: Optional[str] = ""
     end_time: Optional[str] = ""
@@ -75,6 +76,7 @@ def _parse_sessions(favorite_sessions, response):
             name=item["name"],
             description=item["description"],
             type=item["sessionType"]["name"],
+            level=item["level"],
         )
         if "startTime" in item and item["startTime"]:
             time = datetime.fromtimestamp(item["startTime"] / 1000, tz=timezone.utc).astimezone(pytz.timezone("US/Pacific"))
