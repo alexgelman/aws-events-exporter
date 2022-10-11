@@ -6,7 +6,7 @@ import os
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Tuple, List, Optional
 
 import requests
 import pandas as pd
@@ -14,7 +14,7 @@ import pytz
 
 from dotenv import load_dotenv
 
-EVENT_ID = "53b5de8d-7b9d-4fcc-a178-6433641075fe"
+from consts import EVENT_ID
 
 
 @dataclass
@@ -24,6 +24,7 @@ class Session:
     description: str
     type: str
     level: str
+    session_id: str
     date: Optional[str] = ""
     start_time: Optional[str] = ""
     end_time: Optional[str] = ""
@@ -34,6 +35,7 @@ class Session:
 def export_favorites() -> None:
     favorites = get_favorites()
     df = pd.DataFrame(favorites)
+    df["reserve"] = True
     df.to_excel("favorites.xlsx")
 
 
@@ -50,7 +52,7 @@ def get_favorites() -> List[Session]:
     return favorite_sessions
 
 
-def _get_favorites_page(next_token: str) -> tuple[list[Session], str]:
+def _get_favorites_page(next_token: str) -> Tuple[List[Session], str]:
     favorite_sessions: List[Session] = []
     query_endpoint = "https://api.us-east-1.prod.events.aws.a2z.com/attendee/graphql"
     query_template = '{{"operationName":"MyFavorites","variables":{{"eventId":"{event_id}","limit":25,"nextToken":"{next_token}"}},"query":"query MyFavorites($eventId: ID!, $limit: Int, $nextToken: String) {{\\n  event(id: $eventId) {{\\n    eventId\\n    name\\n    myFavorites(limit: $limit, nextToken: $nextToken) {{\\n      items {{\\n        ...SessionFieldFragment\\n        __typename\\n      }}\\n      nextToken\\n      __typename\\n    }}\\n    __typename\\n  }}\\n}}\\n\\nfragment SessionFieldFragment on Session {{\\n  action\\n  alias\\n  createdAt\\n  description\\n  duration\\n  endTime\\n  eventId\\n  isConflicting {{\\n    reserved {{\\n      alias\\n      createdAt\\n      eventId\\n      name\\n      sessionId\\n      type\\n      __typename\\n    }}\\n    waitlisted {{\\n      alias\\n      createdAt\\n      eventId\\n      name\\n      sessionId\\n      type\\n      __typename\\n    }}\\n    __typename\\n  }}\\n  isEmbargoed\\n  isFavoritedByMe\\n  isPaidSession\\n  level\\n  location\\n  myReservationStatus\\n  name\\n  sessionId\\n  startTime\\n  status\\n  type\\n  capacities {{\\n    reservableRemaining\\n    waitlistRemaining\\n    __typename\\n  }}\\n  customFieldDetails {{\\n    name\\n    type\\n    visibility\\n    fieldId\\n    ... on CustomFieldValueFlag {{\\n      enabled\\n      __typename\\n    }}\\n    ... on CustomFieldValueSingleSelect {{\\n      value {{\\n        fieldOptionId\\n        name\\n        __typename\\n      }}\\n      __typename\\n    }}\\n    ... on CustomFieldValueMultiSelect {{\\n      values {{\\n        fieldOptionId\\n        name\\n        __typename\\n      }}\\n      __typename\\n    }}\\n    ... on CustomFieldValueHyperlink {{\\n      text\\n      url\\n      __typename\\n    }}\\n    __typename\\n  }}\\n  package {{\\n    itemId\\n    __typename\\n  }}\\n  price {{\\n    currency\\n    value\\n    __typename\\n  }}\\n  venue {{\\n    name\\n    __typename\\n  }}\\n  room {{\\n    name\\n    __typename\\n  }}\\n  sessionType {{\\n    name\\n    __typename\\n  }}\\n  speakers {{\\n    speakerId\\n    jobTitle\\n    companyName\\n    user {{\\n      firstName\\n      lastName\\n      __typename\\n    }}\\n    __typename\\n  }}\\n  tracks {{\\n    name\\n    __typename\\n  }}\\n  __typename\\n}}\\n"}}'
@@ -77,6 +79,7 @@ def _parse_sessions(favorite_sessions, response):
             description=item["description"],
             type=item["sessionType"]["name"],
             level=item["level"],
+            session_id=item["sessionId"],
         )
         if "startTime" in item and item["startTime"]:
             time = datetime.fromtimestamp(item["startTime"] / 1000, tz=timezone.utc).astimezone(pytz.timezone("US/Pacific"))

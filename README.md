@@ -23,7 +23,9 @@ Specifically hard coded for AWS re:Invent 2022, but this can be changed.
 ```
 AWS_EVENTS_ACCESS_TOKEN=<The value that you copied from the browser>
 ```
-- Run within poetry virtualenv
+
+-   Run within poetry virtualenv
+
 ```
 poetry shell
 ```
@@ -35,3 +37,11 @@ poetry shell
 ```
 
 -   A `favorites.xlsx` file will be created containing all of your favorite sessions
+
+-   The excel file contains a column `reserve` write `true` for the sessions that you want to reserve a seat for
+
+-   Once the seat reservation opens, run the seat reservation utility by executing the following command in a terminal window in the repo dir:
+
+```
+./favorites_reserver.py
+```
